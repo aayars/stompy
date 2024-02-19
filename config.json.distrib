@@ -1,0 +1,20 @@
+{
+    "mastodon_endpoint": "https://your.instance.name.here",
+    "mastodon_access_token": "YOUR_MASTODON_ACCESS_TOKEN_HERE",
+    "mastodon_admin_access_token": ~,
+
+    "openai_api_key": "YOUR_OPENAI_API_KEY_HERE",
+
+    "require_mutual": false,
+    "connected_if_they_follow_you": true,
+    "connected_if_you_follow_them": true,
+
+    "followers_threshold": 10,
+    "following_threshold": 1,
+
+    "account_age_days_threshold": 2,
+
+    "require_closed_signups": true,
+
+    "reasons_threshold": 3
+}
