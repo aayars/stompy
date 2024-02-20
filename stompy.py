@@ -353,7 +353,7 @@ def is_spam(notification):
     domain = extract_domain(notification["account"]["acct"])
 
     if domain:
-        if has_open_registration(domain):
+        if REQUIRE_CLOSED_SIGNUPS and has_open_registration(domain):
             reasons.append("Message is from an instance with open registration")
     else:
         print(f"{acct} does not have a domain")
