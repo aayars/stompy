@@ -356,7 +356,6 @@ def is_spam(notification):
         if REQUIRE_CLOSED_SIGNUPS and has_open_registration(domain):
             reasons.append("Message is from an instance with open registration")
     else:
-        print(f"{acct} does not have a domain")
         print(f"✅ Message is from local account. Deferring to human judgement.")
         return False  # For now. ゴゴゴゴ
 
