@@ -1,3 +1,11 @@
+
+            _________                              __
+           / _____/ /___________ _____________  __/ /
+           \___ \  __/ __ \  __ `__ \  __ \  / / / /
+         _____/ / /_/ /_/ / / / / / / /_/ / /_/ /_/
+         \_____/\__/\____/_/ /_/ /_/ .___/\__, /_/
+                                  /_/   /_____/
+
 Stompy! looks at your Mastodon notifications, and offers to block
 spammy accounts and domains. I wrote this in a day, take that as
 you may.
