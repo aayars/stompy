@@ -269,8 +269,8 @@ def is_content_spammy(notification):
         "messages": [
             {
                 "role": "system",
-                "content": "Spam may look like traditional spam, but widen your criteria: it's spam if "
-                           "the message contains a list of random account names without meaningful context or "
+                "content": "Spam may look like traditional spam, but widen your criteria: it's spam if the "
+                           "message contains a list of random account names without meaningful context, or "
                            "excessive mentions of other users, or links to social media profiles, or just a "
                            "number, or just a link to a website, or just nonsensical text, or no text at all. "
                            "Obscene or violent messages should also be considered spam. Additionally, any "
