@@ -59,10 +59,13 @@ mastodon = Mastodon(
 )
 
 # Mastodon API with administrative access
-admin_mastodon = Mastodon(
-    access_token=config["mastodon_admin_access_token"],
-    api_base_url=config["mastodon_endpoint"]
-)
+if config["mastodon_admin_access_token"]:
+    admin_mastodon = Mastodon(
+        access_token=config["mastodon_admin_access_token"],
+        api_base_url=config["mastodon_endpoint"]
+    )
+else:
+    admin_mastodon = None
 
 #
 OPENAI_API_KEY = config["openai_api_key"]
@@ -132,7 +135,7 @@ def is_instance_limited(notification):
         # Admin access required for getting information about instance-level blocks.
         blocks = admin_mastodon.admin_domain_blocks()
     else:
-        # Normal account will not have access to admin functions. Use their personal list.
+        # Normal account will not have access to admin functions. Use account-level blocks.
         blocks = mastodon.domain_blocks()
 
     return domain in [instance["domain"] for instance in blocks]
@@ -198,7 +201,8 @@ def describe_image_with_openai_vision_api(url):
                 ]
             }
         ],
-        "max_tokens": 300
+        "max_tokens": 300,
+        "temperature": 0.125
     }
 
     headers = {
@@ -248,7 +252,7 @@ def format_reason(content):
 
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
 
-    return response.json()["choices"][0]["message"]["content"].split("\n")
+    return [c for c in response.json()["choices"][0]["message"]["content"].split("\n") if c]
 
 
 # If dumb heuristics are inconclusive, screen the message with GPT.
@@ -266,18 +270,22 @@ def is_content_spammy(notification):
         "messages": [
             {
                 "role": "system",
-                "content": "Spam may look like traditional spam, but widen your criteria: a spam message "
-                           "may appear to be just a list of account names and links to social media "
-                           "profiles, or just a number, or just a link to a website, or just nonsensical "
-                           "text, or no text at all. Obscene or violent messages should also be considered "
-                           "spam. Is the message spam? Answer only with \"YES\" or \"NO\", followed by "
-                           "your reasoning why or why not the message is spam."
+                "content": "Spam may look like traditional spam, but widen your criteria: it's spam if "
+                           "the message contains a list of random account names without meaningful context or "
+                           "excessive mentions of other users, or links to social media profiles, or just a "
+                           "number, or just a link to a website, or just nonsensical text, or no text at all. "
+                           "Obscene or violent messages should also be considered spam. Additionally, any "
+                           "message that seems to serve no purpose other than to advertise or draw unsolicited "
+                           "attention can be considered spam. Is the message spam? Answer only with \"YES\" or "
+                           "\"NO\", followed by your reasoning why or why not the message is spam."
+
             },
             {
                 "role": "user",
                 "content": notification['status']['content'],
             }
-        ]
+        ],
+        "temperature": 0.125
     }
 
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
@@ -376,6 +384,66 @@ def is_spam(notification):
     return []
 
 
+def get_user_choice(prompt):
+    # Valid choices dictionary for easy expansion or modification
+    valid_choices = {
+        'Y': 'Yes',
+        'N': 'No',
+        # 'A': 'All'
+    }
+
+    # Specify the default choice (make sure its case matches the dict key)
+    default_choice = 'Y'
+
+    # Prompt message including dynamically generated choices and the default choice
+    prompt_message = f"{prompt} (Y/n)"
+
+    while True:
+        # Ask the user for their choice, making it case insensitive
+        user_input = input(prompt_message).strip().upper() or default_choice
+
+        # Check if the input is one of the valid choices
+        if user_input in valid_choices:
+            return user_input == "Y"
+
+
+def block_domain(domain):
+    if admin_mastodon:
+        # If we have an admin key, block it on the instance level
+        admin_mastodon.admin_create_domain_block(
+            domain=domain,
+            severity='silence',
+            reject_media=True,
+            reject_reports=True,
+            private_comment="Blocked by Stompy for spam",
+            obfuscate=True
+        )
+
+        print("🔨 Instance has been limited.")
+
+    else:
+        # Block just on the account level
+        mastodon.domain_block(domain)
+
+        print("🔨 Instance has been blocked.")
+
+
+def block_account(account_id):
+    if admin_mastodon:
+        admin_mastodon.admin_account_moderate(
+            account_id, 
+            action="suspend",
+            send_email_notification=False
+        )
+
+        print("🔨 Account has been suspended.")
+
+    else:
+        mastodon.account_block(account_id)
+
+        print("🔨 Account has been blocked.")
+
+
 def main():
     notifications = mastodon.notifications()
 
@@ -391,10 +459,33 @@ def main():
                 for reason in reasons:
                     print(f"❌ {reason}")
 
-                if is_instance_limited(notification):
-                    print(f"⚠️  Recommend blocking {acct}")
+                account_id = notification["account"]["id"]
+
+                if admin_mastodon:
+                    block_or_suspend = "suspending"
                 else:
-                    print(f"⚠️  Recommend blocking {acct} and limiting instance {domain}")
+                    block_or_suspend = "blocking"
+
+                if is_instance_limited(notification):
+                    print(f"⚠️  Recommend {block_or_suspend} {acct}")
+
+                    if get_user_choice(f"Proceed with {block_or_suspend} account {acct} (ID {account_id})?"):
+                        block_account(account_id)
+
+                else:
+                    if admin_mastodon:
+                        block_or_limit = "limiting"
+                    else:
+                        block_or_limit = "blocking"
+
+                    print(f"⚠️  Recommend {block_or_suspend} {acct} and {block_or_limit} instance {domain}")
+
+                    if get_user_choice(f"Proceed with {block_or_suspend} account {acct} (ID {account_id})?"):
+                        block_account(account_id)
+
+                    if get_user_choice(f"Proceed with {block_or_limit} instance {domain}?"):
+                        block_domain(domain)
+
             else:
                 print(f"😊 Friendly message from {acct}")
 
