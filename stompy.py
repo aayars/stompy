@@ -160,7 +160,6 @@ def extract_image_urls_from_notification(notification):
         attachments = notification["status"]["media_attachments"]
 
         if attachments:
-            # Assuming we take the first attachment as the image of interest
             for attachment in attachments:
                 urls.append(attachment.get("remote_url"))
 
