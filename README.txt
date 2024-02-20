@@ -19,9 +19,12 @@ source venv/bin/activate
 pip install Mastodon.py
 
 2) With a normal user account, create an app in the "Development"
-tab of your Mastodon settings.
+tab of your Mastodon settings. This is the account that mitigation
+will be active for. The script currently only directly supports
+one user, multi-user support may be a thing that gets added later.
 
 Give it the following scopes:
+
 read:accounts
 read:blocks
 read:follows
@@ -49,6 +52,14 @@ it's fine to do steps 2 and 3 together.
 
 4) Optional: get an OpenAI API Key. This costs money and some
 people may find it offensive, thus it is optional.
+
+Calls to OpenAI are only performed in a minority of cases where
+other heuristics are inconclusive. If there's no key, the script
+will just skip it.
+
+You may wish to add a note to your profile to let everyone know
+the AI boogey man is watching, I'm using: "Suspected spam messages
+are subject to AI screening."
 
 5) Copy config.json.distrib to config.json.
 
