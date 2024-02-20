@@ -12,7 +12,7 @@
     "followers_threshold": 10,
     "following_threshold": 1,
 
-    "account_age_days_threshold": 2,
+    "account_age_days_threshold": 3,
 
     "require_closed_signups": true,
 
