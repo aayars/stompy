@@ -372,7 +372,7 @@ def is_spam(notification):
         reasons.append("Message is from an account with no or few relationships")
 
     #
-    if len(reasons) <= REASONS_THRESHOLD:  # We're on the cusp, based on low-hanging fruit heuristics. Bring in the AI.
+    if len(reasons) > 2 and len(reasons) <= REASONS_THRESHOLD:  # We're on the cusp, based on low-hanging fruit heuristics. Bring in the AI.
         reasons += is_content_spammy(notification)
 
     if len(reasons) > REASONS_THRESHOLD:
